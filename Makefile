@@ -1,6 +1,6 @@
 ARCH = i686
 CXX = $(ARCH)-w64-mingw32-g++
-CXXFLAGS += -std=c++14 -Wl,-s -Ofast -pipe
+CXXFLAGS += -std=c++17 -Wl,-s -Ofast -pipe
 CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -pedantic
 CXXFLAGS += -mwindows -static-libstdc++ -static-libgcc
 
