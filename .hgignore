@@ -1,7 +1,5 @@
 syntax: glob
-*.exe
-*.o
-*.d
-
+cmake-build-*
+.idea
 .DS_Store
 
