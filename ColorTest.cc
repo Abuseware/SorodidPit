@@ -136,7 +136,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     WNDCLASSEX WindowClass;
     MSG Msg;
 
-    const char WindowClassName[] = "myWindowClass";
+    const char *WindowClassName = "myWindowClass";
 
     WindowClass.cbSize = sizeof(WNDCLASSEX);
     WindowClass.style = 0;
@@ -144,8 +144,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     WindowClass.cbClsExtra = 0;
     WindowClass.cbWndExtra = 0;
     WindowClass.hInstance = hInstance;
-    WindowClass.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    WindowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    WindowClass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(0));
+    WindowClass.hCursor = LoadCursor(nullptr, IDC_CROSS);
     WindowClass.hbrBackground = brushes[7];
     WindowClass.lpszMenuName = nullptr;
     WindowClass.lpszClassName = WindowClassName;
