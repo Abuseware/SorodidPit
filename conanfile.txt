@@ -1,0 +1,15 @@
+[generators]
+cmake
+
+[requires]
+sfml/2.5.1@bincrafters/stable
+
+[options]
+sfml:shared=False
+sfml:window=True
+sfml:graphics=True
+sfml:network=False
+sfml:audio=False
+
+#[imports]
+#bin, *.dll -> ./bin

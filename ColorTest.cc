@@ -23,157 +23,104 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <windows.h>
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 
-#include <array>
+const unsigned char STEP = 1;
+const unsigned char FPS = 120;
 
-HWND Window, Button;
+int main() {
+    sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "ColorTest", sf::Style::Fullscreen);
+    window.setFramerateLimit(FPS);
+    window.setMouseCursorVisible(false);
 
-std::array<HBRUSH, 8> brushes = {
-        CreateSolidBrush(RGB(255, 0, 0)),
-        CreateSolidBrush(RGB(255, 255, 0)),
-        CreateSolidBrush(RGB(0, 255, 0)),
-        CreateSolidBrush(RGB(0, 255, 255)),
-        CreateSolidBrush(RGB(0, 0, 255)),
-        CreateSolidBrush(RGB(255, 255, 255)),
-        CreateSolidBrush(RGB(127, 127, 127)),
-        CreateSolidBrush(RGB(0, 0, 0))
-};
+    enum State { BlackToRed, RedToGreen, GreenToBlue, BlueToWhite, WhiteToBlack, Exit};
 
-unsigned int current_color = 0;
+    sf::Uint8 r = 0, g = 0, b = 0;
+    State state = BlackToRed;
+    bool pause = false;
 
-const int BUTTONSIZE = 50;
-const int MARGIN = 50;
-const int ScreenW = GetSystemMetrics(SM_CXSCREEN);
-const int ScreenH = GetSystemMetrics(SM_CYSCREEN);
+    while (window.isOpen())
+    {
+        sf::Event event{};
+        while (window.pollEvent(event)) {
 
-int buttonpos[8][2] = {
-        { //0
-                MARGIN,
-                MARGIN
-        },
-        { //1
-                ScreenW - MARGIN - BUTTONSIZE,
-                MARGIN
-        },
-        { //2
-                MARGIN,
-                ScreenH - MARGIN - BUTTONSIZE
-        },
-        { //3
-                ScreenW - MARGIN - BUTTONSIZE,
-                ScreenH - MARGIN - BUTTONSIZE
-        },
-        { //4
-                ScreenW / 4 * 1 - BUTTONSIZE / 2,
-                ScreenH / 2 - BUTTONSIZE / 2
-        },
-        { //5
-                ScreenW / 4 * 3 - BUTTONSIZE / 2,
-                ScreenH / 2 - BUTTONSIZE / 2
-        },
-        { //6
-                ScreenW / 2 - BUTTONSIZE / 2,
-                ScreenH / 4 * 1 - BUTTONSIZE / 2
-        },
-        { //7
-                ScreenW / 2 - BUTTONSIZE / 2,
-                ScreenH / 4 * 3 - BUTTONSIZE / 2
+            switch (event.type) {
+                case sf::Event::Closed:
+                    window.close();
+                    break;
+                case sf::Event::KeyPressed:
+                    if (event.key.code == sf::Keyboard::Escape) {
+                        window.close();
+                        pause = true; // Skip unnecessary redraws
+                    }
+                    if (event.key.code == sf::Keyboard::Space) pause = !pause;
+                    break;
+                case sf::Event::MouseButtonPressed:
+                    if(event.mouseButton.button == sf::Mouse::Left) pause = false;
+                default:
+                    break;
+            }
         }
-};
 
-void redraw() {
-    PAINTSTRUCT ps;
-    HDC hdc;
+        if(!pause){
+            switch(state) {
+                case BlackToRed:
+                    r += STEP;
+                    if (r == 255) {
+                        state = RedToGreen;
+                        pause = true;
+                    }
+                    break;
 
-    hdc = BeginPaint(Window, &ps);
-    FillRect(hdc, &ps.rcPaint, brushes[current_color]);
-    EndPaint(Window, &ps);
+                case RedToGreen:
+                    g += STEP;
+                    r -= STEP;
+                    if (g == 255) {
+                        state = GreenToBlue;
+                        pause = true;
+                    }
+                    break;
 
-    hdc = BeginPaint(Button, &ps);
-    FillRect(hdc, &ps.rcPaint, brushes[7]);
-    ps.rcPaint.top += 1;
-    ps.rcPaint.left += 1;
-    ps.rcPaint.bottom -= 1;
-    ps.rcPaint.right -= 1;
-    FillRect(hdc, &ps.rcPaint, brushes[(current_color + 1) % brushes.size()]);
-    EndPaint(Button, &ps);
-}
+                case GreenToBlue:
+                    b += STEP;
+                    g -= STEP;
+                    if (b == 255){
+                        state = BlueToWhite;
+                        pause = true;
+                    }
+                    break;
 
-void buttonClicked() {
-    if (++current_color < brushes.size()) {
-        SetWindowPos(
-                Button,
-                nullptr,
-                buttonpos[current_color][0], buttonpos[current_color][1],
-                0, 0,
-                SWP_NOSIZE | SWP_NOZORDER
-        );
-        InvalidateRect(Window, nullptr, true);
-    } else {
-        PostQuitMessage(0);
+                case BlueToWhite:
+                    r += STEP;
+                    g = r;
+                    if (r == 255) {
+                        state = WhiteToBlack;
+                        pause = true;
+                    }
+                    break;
+
+                case WhiteToBlack:
+                    r -= STEP;
+                    g = b = r;
+                    if (r == 0) {
+                        state = Exit;
+                        pause = true;
+                    }
+                    break;
+                case Exit:
+                    window.close();
+                    pause = true;
+                    break;
+            }
+
+            if(window.isOpen()){
+                window.clear(sf::Color(r, g, b));
+                window.display();
+            }
+        }
+
     }
-}
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            break;
-        case WM_PAINT:
-            redraw();
-            break;
-        case WM_COMMAND:
-            if ((HWND) lParam == Button) buttonClicked();
-            break;
-        default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
     return 0;
-}
-
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    WNDCLASSEX WindowClass;
-    MSG Msg;
-
-    const char *WindowClassName = "myWindowClass";
-
-    WindowClass.cbSize = sizeof(WNDCLASSEX);
-    WindowClass.style = 0;
-    WindowClass.lpfnWndProc = WndProc;
-    WindowClass.cbClsExtra = 0;
-    WindowClass.cbWndExtra = 0;
-    WindowClass.hInstance = hInstance;
-    WindowClass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(0));
-    WindowClass.hCursor = LoadCursor(nullptr, IDC_CROSS);
-    WindowClass.hbrBackground = brushes[7];
-    WindowClass.lpszMenuName = nullptr;
-    WindowClass.lpszClassName = WindowClassName;
-    WindowClass.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
-
-    RegisterClassEx(&WindowClass);
-
-    Window = CreateWindowEx(
-            WS_EX_TOPMOST,
-            WindowClassName, "Color Test",
-            WS_POPUP | WS_MAXIMIZE | WS_VISIBLE,
-            0, 0, ScreenW, ScreenH,
-            nullptr, nullptr, hInstance, nullptr
-    );
-
-    Button = CreateWindow(
-            "BUTTON",
-            "",
-            WS_VISIBLE | WS_CHILD | BS_FLAT | BS_PUSHBUTTON,
-            buttonpos[0][0], buttonpos[0][1], BUTTONSIZE, BUTTONSIZE,
-            Window, nullptr, hInstance, nullptr
-    );
-
-    ShowWindow(Window, nCmdShow);
-
-    while (GetMessage(&Msg, nullptr, 0, 0) > 0) {
-        TranslateMessage(&Msg);
-        DispatchMessage(&Msg);
-    }
-    return Msg.wParam;
 }
